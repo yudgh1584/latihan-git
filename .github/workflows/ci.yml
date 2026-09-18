@@ -16,7 +16,4 @@ on:
         uses: actions/checkout@v4
 
       - name: Test app
-           run: | 
-             echo "Menjalankan Test...."
-             test -f app.txt
-             echo "Tst berhasil.....!!!"
+        run: test -f app.txt
