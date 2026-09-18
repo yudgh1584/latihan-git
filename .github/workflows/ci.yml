@@ -11,12 +11,12 @@ on:
     test:
       runs-on: ubuntu-latest
 
-      steps:
-        - name: checkout repository
-          uses: actions/checkout@v4
+    steps:
+      - name: checkout repository
+        uses: actions/checkout@v4
 
-	- name: Test app
-          run: | 
-           echo "Menjalankan Test...."
-           test -f app.txt
-           echo "Tst berhasil.....!!!"
+      - name: Test app
+           run: | 
+             echo "Menjalankan Test...."
+             test -f app.txt
+             echo "Tst berhasil.....!!!"
