@@ -7,13 +7,13 @@ on:
     branches: [main]
 
 
-  jobs:y
-    test:
+jobs:
+   test:
       runs-on: ubuntu-latest
 
-    steps:
-      - name: checkout repository
-        uses: actions/checkout@v4
+   steps:
+     - name: checkout repository
+       uses: actions/checkout@v4
 
-      - name: Test app
-        run: test -f app.txt
+     - name: Test app
+       run: test -f app.txt
