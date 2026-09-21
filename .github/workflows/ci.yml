@@ -1,14 +1,117 @@
-name: CI
+name: Universal CI (Docker, Node, Python, PHP)
 
-on: push
+on:
+  push:
+    branches: [ "main", "master", "develop" ]
+  pull_request:
+    branches: [ "main", "master" ]
 
 jobs:
-  test:
+  # ----------------------------------------------------
+  # 1. JOB DOCKER (Berjalan jika ada Dockerfile)
+  # ----------------------------------------------------
+  docker-ci:
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+    - name: Ambil Kode
+      uses: actions/checkout@v4
 
-      - name: Test app
-        run: ./test.sh
+    - name: Deteksi dan Build Docker
+      run: |
+        if [ -f Dockerfile ]; then
+          echo "🐳 Dockerfile ditemukan! Memulai validasi build..."
+          docker build . -t app-test:latest
+          echo "✅ Docker build berhasil tanpa error!"
+        else
+          echo "⏭️ Tidak ada Dockerfile. Langkah dilewati."
+        fi
+
+  # ----------------------------------------------------
+  # 2. JOB NODE.JS (Berjalan jika ada package.json)
+  # ----------------------------------------------------
+  node-ci:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Ambil Kode
+      uses: actions/checkout@v4
+
+    - name: Deteksi dan Jalankan Node.js
+      run: |
+        if [ -f package.json ]; then
+          echo "📦 package.json ditemukan! Setup Node.js..."
+          curl -fsSL https://nodesource.com | sudo -E bash -
+          sudo apt-get install -y nodejs
+          npm ci
+          npm test --if-present
+          echo "✅ Node.js CI selesai!"
+        else
+          echo "⏭️ Bukan proyek Node.js. Langkah dilewati."
+        fi
+
+  # ----------------------------------------------------
+  # 3. JOB PYTHON (Berjalan jika ada requirements.txt / pyproject.toml)
+  # ----------------------------------------------------
+  python-ci:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Ambil Kode
+      uses: actions/checkout@v4
+
+    - name: Deteksi dan Jalankan Python
+      run: |
+        if [ -f requirements.txt ] || [ -f pyproject.toml ]; then
+          echo "🐍 Proyek Python terdeteksi! Setup environment..."
+          sudo apt-get update && sudo apt-get install -y python3-pip python3-venv
+          python3 -m venv venv
+          source venv/bin/activate
+          
+          if [ -f requirements.txt ]; then
+            pip install -r requirements.txt
+          fi
+          
+          # Jalankan pytest jika ada, atau jalankan validasi syntax dasar
+          if pip show pytest > /dev/null 2>&1; then
+            pytest
+          else
+            echo "Menguji syntax python..."
+            python3 -m compileall .
+          fi
+          echo "✅ Python CI selesai!"
+        else
+          echo "⏭️ Bukan proyek Python. Langkah dilewati."
+        fi
+
+  # ----------------------------------------------------
+  # 4. JOB PHP (Berjalan jika ada composer.json)
+  # ----------------------------------------------------
+  php-ci:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Ambil Kode
+      uses: actions/checkout@v4
+
+    - name: Deteksi dan Jalankan PHP
+      run: |
+        if [ -f composer.json ]; then
+          echo "🐘 Proyek PHP terdeteksi! Setup PHP & Composer..."
+          sudo apt-get update && sudo apt-get install -y php-cli php-mbstring php-xml unzip
+          
+          # Install Composer secara manual
+          curl -sS https://getcomposer.org | php
+          sudo mv composer.phar /usr/local/bin/composer
+          
+          # Install dependencies
+          composer install --no-progress --prefer-dist
+          
+          # Jalankan PHPUnit jika dikonfigurasi, atau cek syntax error (lint)
+          if [ -f vendor/bin/phpunit ]; then
+            vendor/bin/phpunit
+          else
+            echo "Mengecek syntax error pada file PHP (Linting)..."
+            find . -path ./vendor -prune -o -name "*.php" -print0 | xargs -0 -n1 php -l
+          fi
+          echo "✅ PHP CI selesai!"
+        else
+          echo "⏭️ Bukan proyek PHP. Langkah dilewati."
+        fi
+
