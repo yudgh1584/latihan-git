@@ -11,4 +11,4 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Test app
-        run: test -f app.txt
+        run: ./test.sh
